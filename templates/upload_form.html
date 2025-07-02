@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HealthConnect AI - Skin Condition Predictor</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f7f6;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        form {
+            background-color: #ffffff;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 30px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            margin-bottom: 30px;
+            box-sizing: border-box; /* Include padding in width calculation */
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: #555;
+            font-size: 1.1em;
+        }
+
+        input[type="file"] {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            box-sizing: border-box;
+            background-color: #fcfcfc;
+        }
+
+        button {
+            display: block;
+            width: 100%;
+            padding: 12px 20px;
+            background-color: #28a745; /* Green */
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+
+        button:hover {
+            background-color: #218838; /* Darker green on hover */
+            transform: translateY(-2px);
+        }
+
+        h2 {
+            color: #2c3e50;
+            margin-top: 0;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        #response-container {
+            background-color: #e9f5e9; /* Light green background for results */
+            border: 1px solid #c3e6cb;
+            border-radius: 10px;
+            padding: 25px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            box-sizing: border-box;
+            text-align: left;
+            word-wrap: break-word; /* Ensure long text wraps */
+        }
+
+        #response-container p {
+            margin-bottom: 10px;
+            line-height: 1.6;
+        }
+
+        #response-container strong {
+            color: #007bff; /* Blue for key prediction text */
+        }
+
+        #response-container em {
+            color: #6c757d; /* Grey for disclaimer */
+            display: block;
+            margin-top: 15px;
+            font-size: 0.9em;
+        }
+
+        #response-container pre {
+            background-color: #f8f9fa;
+            border: 1px solid #e2e6ea;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto; /* For long confidence strings */
+            font-size: 0.85em;
+        }
+
+        .error-message {
+            color: #dc3545; /* Red for errors */
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>HealthConnect AI: Personalized Skin Condition Predictor</h1>
+
+    <form id="uploadForm">
+        {% csrf_token %} <label for="image_file">Upload an image of the skin condition:</label>
+        <input type="file" id="image_file" name="image" accept="image/*" required>
+        <button type="submit">Get AI Prediction</button>
+    </form>
+
+    <h2>Prediction Result:</h2>
+    <div id="response-container">
+        <p>Please upload an image and click 'Get AI Prediction' to see the results here.</p>
+    </div>
+
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', async function(event) {
+            event.preventDefault(); 
+            const formData = new FormData();
+            const imageFile = document.getElementById('image_file').files[0];
+
+            
+            if (!imageFile) {
+                alert('Please select an image file first!');
+                return;
+            }
+
+            formData.append('image', imageFile); 
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+            const responseContainer = document.getElementById('response-container');
+            responseContainer.innerHTML = '<p><strong>Predicting...</strong> Please wait.</p>'; 
+            try {
+                
+                const response = await fetch('http://127.0.0.1:8000/api/predict-skin-condition/', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrfToken 
+                    },
+                    body: formData 
+                });
+
+                const result = await response.json(); 
+
+                if (response.ok) { 
+                    responseContainer.innerHTML = `
+                        <p><strong>Predicted Condition:</strong> ${result.prediction}</p>
+                        <p><strong>Confidence:</strong> ${result.confidence}</p>
+                        <p><strong>Disclaimer:</strong> <em>${result.disclaimer}</em></p>
+                        <p><strong>Detailed Confidences:</strong></p>
+                        <pre>${JSON.stringify(result.all_confidences, null, 2)}</pre>
+                    `;
+                } else { 
+                    responseContainer.innerHTML = `
+                        <p class="error-message">Error: ${result.error || 'An unknown error occurred.'}</p>
+                        ${result.details ? `<p class="error-message">Details: ${result.details}</p>` : ''}
+                    `;
+                }
+
+            } catch (error) { 
+                responseContainer.innerHTML = `
+                    <p class="error-message">Network error or server unreachable: ${error.message}</p>
+                    <p class="error-message">Please ensure your Django server is running and accessible.</p>
+                `;
+                console.error('Fetch error:', error);
+            }
+        });
+    </script>
+</body>
+</html>
