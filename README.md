@@ -27,7 +27,11 @@ An AI-powered web application that predicts skin diseases from uploaded images u
    ```bash
    git clone https://github.com/your-username/skin-disease-predictor.git
    cd skin-disease-predictor
+## 📥 Model File
 
+Due to GitHub’s 100MB limit, the trained `.h5` model is hosted on Google Drive.
+
+👉 [Download best_skin_disease_model.h5]([https://drive.google.com/your-drive-link-here](https://drive.google.com/file/d/1sRQcHZZLTEysPgsFYnhnDR0Ng0ab6tz7/view?usp=drive_link))
 **Create a virtual environment and install dependencies:**
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
